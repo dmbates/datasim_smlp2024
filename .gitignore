@@ -1,0 +1,17 @@
+_build/
+_gen/
+*.log
+*.html
+Manifest*.toml
+.vscode/
+.DS_Store
+
+.quarto/
+_freeze/
+.jupyter_cache/
+data/
+*_files/
+
+/.quarto/
+
+/.luarc.json

@@ -1,13 +1,23 @@
 ---
 title: "Data simulation and example analysis for _Scene Visualization: Transfer from Text to Visuals_"
-date: "`r Sys.Date()`"
-output: github_document
+date: last-modified
+engine: julia
+julia:
+  exeflags: [ "-tauto", "--project"]
 ---
 
-```{r setup}
+## Load the packages to be used
+
+```{julia}
+#| output: false
+using MixedModels
+using RCall       # call R from within a Julia session
+
+R"""              # evaluate expressions in R
 library(lme4)
 library(lattice)
 set.seed(1614)
+"""
 ```
 
 # Description
@@ -50,7 +60,11 @@ representation than participants who must identify false information in a
 graphical representation of the scene. No difference for true information is
 expected.
 
-```{r hypothesis, fig.align = "center", fig.height = 5, fig.width = 5}
+```{r}
+#| label: fig-hypothesis
+#| fig.align: center
+#| fig.height: 5
+#| fig.width:  5
 # Hypothesis: 0.1 probability difference for true vs. false for graphic representation
 design <- data.frame(representation = factor(rep(c("text", "graphic"), each = 2),
                                              levels = c("text", "graphic")),
@@ -63,9 +77,15 @@ xyplot(prob ~ representation, data = design, groups = veracity,
 knitr::kable(design)
 ```
 
+:::{.callout-note}
+I haven't worked out how to get the plots from an {r} block to display.
+:::
+
 # Data simulation
 
-```{r datasim}
+```{r}
+#| label: datasim
+#| output: false
 # Fixed effects
 X <- model.matrix( ~ representation * veracity, data = design)
 (fix <- as.vector(solve(X) %*% qlogis(design$prob)))
@@ -94,7 +114,11 @@ dat$resp <- simulate( ~ representation * veracity + (1|id) + (1|item),
 
 ## Descriptives
 
-```{r descriptives, fig.align = "center", fig.height = 5, fig.width = 5}
+```{r}
+#| label: fig-descriptives
+#| fig.align: center
+#| fig.height: 5
+#| fig.width: 5 
 # Frequency table of observations per condition
 (tab1 <- xtabs( ~ representation + veracity, dat))
 # Frequency table of correct answers per condition
@@ -108,13 +132,19 @@ xyplot(Freq ~ representation, data = datm, groups = veracity,
 knitr::kable(datm)
 ```
 
-# Analysis with `lme4::glmer()`
+# Analysis with `MixedModels`
 
-```{r analysis}
+```{julia}
+#| label: analysis
 
-m1 <- glmer(resp ~ representation * veracity + (1|id) + (1|item), dat,
-            family = binomial)
+m1 = let f = @formula(resp ~ representation * veracity + (1|id) + (1|item))
+    d = rcopy(R"dat")
+    contrasts = Dict(
+       :representation => DummyCoding(base="text"),
+       :veracity => DummyCoding(base="true"),
+    )
+    progress = false  # suppress progress bar
 
-summary(m1)
+    fit(MixedModel, f, d, Bernoulli(); contrasts, progress)
+end
 ```
-
