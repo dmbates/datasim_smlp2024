@@ -1,13 +1,21 @@
 ---
 title: "Data simulation and example analysis for _Event Segmentation with Dynamic Maps: Influence of Framing and Spatial Pattern of Change_"
 date: last-modified
+engine: julia
+julia:
+  exeflags: [ "-tauto", "--project"]
 ---
 
-```{r}
+```{julia}
+using MixedModels
+using RCall
+
+R"""
 set.seed(1331)
 
 library(dplyr)
 library(lme4)
+"""
 ```
 
 # Description
@@ -71,10 +79,10 @@ than for those in which they are spread out.
 
 ```{r}
 #| label: fig-hypothesis
-#| fig-cap: Fixed-effects for simulated data
 #| fig-align: center
-#| fig-height:  5
-#| fig-width: 7 
+#| fig-height: 5
+#| fig-width: 7
+#| output: false
 design <- expand.grid(
   trend       = c(-1, -0.5, 0.5, 1),
   framing     = c(-1, 1),  # 1 = Invasive, -1 = Endangered
@@ -125,6 +133,7 @@ lattice::xyplot(seg_agree ~ trend | framing,
 # Data simulation
 
 ```{r}
+#| label: datasim
 # Random effect subjects
 subject_sd             <- 0.1
 subject_trend_sd       <- 0.03
@@ -183,7 +192,7 @@ dat <- dat |>
 # Descriptives
 
 ```{r}
-#| label: descriptives
+#| label: fig-descriptives
 str(dat)
 summary(dat)
 
@@ -211,11 +220,20 @@ lattice::xyplot(mean_agreement ~ trend | framing,
 
 # Analyses
 
-```{r}
-#| label: analysis
-m1 <- lmer(resp ~ framing * trend * spatialdist + (trend + framing + spatialdist | subj_id),
-           data = dat)
+```{julia}
+m1 = let f = @formula(resp ~ framing * trend * spatialdist + (trend + framing + spatialdist | subj_id))
+  d = rcopy(R"dat")
 
-summary(m1)
+  fit(MixedModel, f, d)
+end
 ```
 
+
+```{julia}
+println(m1)  # for those who like to see the whole story
+```
+
+The random-effects covariance matrix is of rank 3, not 4.
+```{julia}
+m1.rePCA
+```

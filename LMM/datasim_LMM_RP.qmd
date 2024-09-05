@@ -1,9 +1,10 @@
 ---
 title: "Data simulation and example analysis for _Event Segmentation with Dynamic Maps: Influence of Framing and Spatial Pattern of Change_"
-date: last-modified
+date: "`r Sys.Date()`"
+output: github_document
 ---
 
-```{r}
+```{r setup}
 set.seed(1331)
 
 library(dplyr)
@@ -69,12 +70,7 @@ and positive if it is framed as invasive. We further expect this difference to
 be more pronounced for maps in which the changing regions are clustered together
 than for those in which they are spread out.
 
-```{r}
-#| label: fig-hypothesis
-#| fig-cap: Fixed-effects for simulated data
-#| fig-align: center
-#| fig-height:  5
-#| fig-width: 7 
+```{r hypothesis, fig.align = "center", fig.height = 5, fig.width = 7}
 design <- expand.grid(
   trend       = c(-1, -0.5, 0.5, 1),
   framing     = c(-1, 1),  # 1 = Invasive, -1 = Endangered
@@ -124,7 +120,7 @@ lattice::xyplot(seg_agree ~ trend | framing,
 
 # Data simulation
 
-```{r}
+```{r datasim}
 # Random effect subjects
 subject_sd             <- 0.1
 subject_trend_sd       <- 0.03
@@ -182,8 +178,7 @@ dat <- dat |>
 
 # Descriptives
 
-```{r}
-#| label: descriptives
+```{r descriptives}
 str(dat)
 summary(dat)
 
@@ -211,8 +206,7 @@ lattice::xyplot(mean_agreement ~ trend | framing,
 
 # Analyses
 
-```{r}
-#| label: analysis
+```{r analysis}
 m1 <- lmer(resp ~ framing * trend * spatialdist + (trend + framing + spatialdist | subj_id),
            data = dat)
 
